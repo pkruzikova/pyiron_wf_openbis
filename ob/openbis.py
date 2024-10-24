@@ -1,9 +1,15 @@
 
-def openbis_login(url, username):
-    from pybis import Openbis
+def openbis_login(url, username, s3_config_path=None):
     from getpass import getpass
 
-    o = Openbis(url)
+    if s3_config_path:
+        from ob.OpenbisAixTended import OpenbisWithS3
+        o = OpenbisWithS3(url=url, verify_certificates=True, 
+                          s3_config_path=s3_config_path, standardize_filenames=True)
+    else:
+        from pybis import Openbis
+        o = Openbis(url)
+
     if not o.is_session_active():
         o.login(username, getpass('Enter openBIS password: '), save_token=True) # save the session token in ~/.pybis/example.com.token
     return o
@@ -121,12 +127,10 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
         atom_calc_type = None
         if 'molecular_statics' in concept_dict.keys() and 'minimization_algorithm' in cdict.keys():
             atom_calc_type = ('ATOM_CALC_STRUC_OPT').lower()
-            description =   '<figure class="image image_resized image-style-align-left" style="width:9%;">' + \
-                            '<img src="/openbis/openbis/file-service/eln-lims/30/77/c8/3077c8f8-0e55-41e5-9021-7ed43863e5a4/cc44149e-b2d4-4850-9f88-7a4cd54c1a66.png">' + \
-                            '</figure><p><br>Lammps simulation using pyiron for energy minimization/structural optimization.<br>&nbsp;</p><p><span style="color:hsl(240,75%,60%);">' + \
-                            '<strong>Scroll down below other properties to view conceptual dictionary with ontological ids of selected properties and values.</strong></span>' + \
-                            '</p><p>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a><br>&nbsp;</p>'
-
+            description = 'Lammps simulation using pyiron for energy minimization/structural optimization.<p><span style="color:hsl(240,75%,60%);">' + \
+                        '<strong>Scroll down below other properties to view conceptual dictionary with ontological ids of selected properties and values.</strong></span>' + \
+                        '<br>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a></p>'
+        
         atom_ionic_min_algo = None
         if cdict['minimization_algorithm'] == 'fire':
             atom_ionic_min_algo = ('MIN_ALGO_FIRE').lower()
@@ -192,6 +196,7 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
             collection = ob_coll,
             object     = object_,
             files      = [path_to_h5],
+            kind = 'PHYSICAL',
             props      = dataset_props_dict
         )
 
@@ -202,6 +207,7 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
             collection = ob_coll,
             object     = object_,
             files      = [path_to_json],
+            kind = 'PHYSICAL',
             props      = {'$name':cdict['job_name']+'_concept_dict.json'}
         )
 
@@ -212,6 +218,7 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
             collection = ob_coll,
             object     = object_,
             files      = [path_to_yml],
+            kind = 'PHYSICAL',
             props      = {'$name':cdict['job_name']+'_environment.yml', 'env_tool': 'conda'}
         )
 
@@ -272,11 +279,9 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
 
     else:
 
-        description =   '<figure class="image image_resized image-style-align-left" style="width:9%;">' + \
-                        '<img src="/openbis/openbis/file-service/eln-lims/30/77/c8/3077c8f8-0e55-41e5-9021-7ed43863e5a4/cc44149e-b2d4-4850-9f88-7a4cd54c1a66.png">' + \
-                        '</figure><p><br>Crystal structure generated using pyiron.<br>&nbsp;</p><p><span style="color:hsl(240,75%,60%);">' + \
+        description =   'Crystal structure generated using pyiron.<p><span style="color:hsl(240,75%,60%);">' + \
                         '<strong>Scroll down below other properties to view conceptual dictionary with ontological ids of selected properties and values.</strong></span>' + \
-                        '</p><p>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a><br>&nbsp;</p>'
+                        '<br>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a></p>'
         
         species = {}
         for i in concept_dict['atoms']:
