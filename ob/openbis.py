@@ -56,8 +56,7 @@ def flatten_crystal_cdict(cdict):
                 elif k == 'atoms' or k == 'simulation_cell' or k == 'job_details':
                     for i in v:
                         flat[i['label']] = i['value']
-                elif k == 'software':
-                    flat[k] = v[0]['label']
+                
                 else:
                     flat[k] = v
         return flat
@@ -71,6 +70,8 @@ def flatten_cdict(cdict):
                         flat[k] = v['label']
                     else:
                         flat = flat | flatten_cdict(v)
+                elif k == 'software':
+                    flat[k] = v[0]['label']
                 elif isinstance(v, list):
                     for i in v: 
                         if isinstance(i, dict):
@@ -80,8 +81,6 @@ def flatten_cdict(cdict):
                                 pass
                         else:
                             flat[k] = v
-                elif k == 'software':
-                    flat[k] = v[0]['label']
                 else:
                     flat[k] = v
         return flat
@@ -91,6 +90,16 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
 
     # if not space:
     #     space = user.upper()
+
+    # TODO: add conditional to recognise whether to link hpc/local workstation openbis parents
+    parents_to_link = {"INTERATOMIC_POTENTIAL": "potential", 
+                       "SOFTWARE_CODE": "software", 
+                       "INSTRUMENT.LOCAL_WORKSTATION": "host"}
+
+    if 'S3' in str(type(o)):
+        kind = 'LINK'
+    else:
+        kind = 'PHYSICAL'
     
     ob_coll = '/' + space + '/' + project + '/' + collection
     # cdict = flatten_lammps_cdict(concept_dict)
@@ -169,84 +178,98 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
             'atom_force_max_in_ev_a': cdict['FinalMaximumForce'],
             'conceptual_dictionary': json_string,
         }
-    
-        object_ = o.new_object(
-            type       = 'PYIRON_JOB.LAMMPS',
-            space      = space,
-            experiment = ob_coll,
-            props      = props_dict
-        )
-        object_.save()
 
-        #hdf_ver = job.to_dict()['HDF_VERSION']
-        path_to_h5 = cdict['project_name'] + '/' + str(cdict['job_name']) + '.h5'
-        path_to_json = cdict['project_name'] + '/' + str(cdict['job_name']) + '_concept_dict.json'
-        path_to_yml = cdict['project_name'] + '/' + str(cdict['job_name']) + '_environment.yml'
-        
-        dataset_props_dict = {
-            '$name': cdict['job_name'] + '.h5',
-            'production_date': datetime.strptime(cdict['job_stoptime'], "%Y-%m-%d %H:%M:%S").date().strftime("%Y-%m-%d"),
-            'file_format': 'HDF5',
-            #'hdf5_version': hdf_ver,
-            'reference': 'https://github.com/pyiron/pyiron_atomistics/blob/main/pyiron_atomistics/lammps/base.py',
-        }
-        
-        ds_hdf = o.new_dataset(
-            type       = 'PYIRON_JOB',
-            collection = ob_coll,
-            object     = object_,
-            files      = [path_to_h5],
-            kind = 'PHYSICAL',
-            props      = dataset_props_dict
-        )
-
-        ds_hdf.save()
-
-        ds_json = o.new_dataset(
-            type       = 'ATTACHMENT',
-            collection = ob_coll,
-            object     = object_,
-            files      = [path_to_json],
-            kind = 'PHYSICAL',
-            props      = {'$name':cdict['job_name']+'_concept_dict.json'}
-        )
-
-        ds_json.save()
-
-        ds_yml = o.new_dataset(
-            type       = 'COMP_ENV',
-            collection = ob_coll,
-            object     = object_,
-            files      = [path_to_yml],
-            kind = 'PHYSICAL',
-            props      = {'$name':cdict['job_name']+'_environment.yml', 'env_tool': 'conda'}
-        )
-
-        ds_yml.save()
-
-        if struct_concept_dict != None:
-            # struct_object_name = 'input_structure_' + flatten_crystal_cdict(struct_concept_dict)['job_name']
-            struct_object_name = 'input_structure_' + flatten_cdict(struct_concept_dict)['job_name']  ####################
-            objects_1 = o.get_objects(
-                space      = space,
-                type       ='MAT_SIM_STRUCTURE.CRYSTAL',
-                start_with = 0,
-            )
-            exists = False
-            for object_1 in objects_1:
-                if object_1.p.get('$name') == struct_object_name:
-                    exists = True
-                    found_object_1 = object_1
-
-            if exists == True:
-                object_.set_parents(found_object_1.identifier)
-                object_.save()
+        ob_parents = []
+        for k, v in parents_to_link.items():
+            parent = o.get_objects(
+                type       = k,
+                where      = {'$name': cdict[v]},
+                attrs      = ['$name']
+            )[0]         
+            if parent:
+                ob_parents.append(parent)
             else:
-                print("==============================\n")
-                print("Create structure object first!\n")
-                print("==============================\n")
-        
-        return object_.p
+                print(f"No parents of the type {k} and name {cdict[v]} found, upload will not proceed.\
+                      Please create them first and then try again.")
+        if len(ob_parents) == len(parents_to_link.keys()): # Found all parents needed
+            object_ = o.new_object(
+                type       = 'PYIRON_JOB.LAMMPS',
+                space      = space,
+                experiment = ob_coll,
+                parents    = ob_parents,
+                props      = props_dict
+            )
+            object_.save()
+
+            #hdf_ver = job.to_dict()['HDF_VERSION']
+            path_to_h5 = cdict['project_name'] + '/' + str(cdict['job_name']) + '.h5'
+            path_to_json = cdict['project_name'] + '/' + str(cdict['job_name']) + '_concept_dict.json'
+            path_to_yml = cdict['project_name'] + '/' + str(cdict['job_name']) + '_environment.yml'
+            
+            dataset_props_dict = {
+                '$name': cdict['job_name'] + '.h5',
+                'production_date': datetime.strptime(cdict['job_stoptime'], "%Y-%m-%d %H:%M:%S").date().strftime("%Y-%m-%d"),
+                'file_format': 'HDF5',
+                #'hdf5_version': hdf_ver,
+                'reference': 'https://github.com/pyiron/pyiron_atomistics/blob/main/pyiron_atomistics/lammps/base.py',
+            }
+            
+            ds_hdf = o.new_dataset(
+                type       = 'PYIRON_JOB',
+                collection = ob_coll,
+                object     = object_,
+                files      = [path_to_h5],
+                kind       = kind,
+                props      = dataset_props_dict
+            )
+
+            ds_hdf.save()
+
+            ds_json = o.new_dataset(
+                type       = 'ATTACHMENT',
+                collection = ob_coll,
+                object     = object_,
+                files      = [path_to_json],
+                kind       = kind,
+                props      = {'$name':cdict['job_name']+'_concept_dict.json'}
+            )
+
+            ds_json.save()
+
+            ds_yml = o.new_dataset(
+                type       = 'COMP_ENV',
+                collection = ob_coll,
+                object     = object_,
+                files      = [path_to_yml],
+                kind       = kind,
+                props      = {'$name':cdict['job_name']+'_environment.yml', 'env_tool': 'conda'}
+            )
+
+            ds_yml.save()
+
+            if struct_concept_dict != None:
+                # struct_object_name = 'input_structure_' + flatten_crystal_cdict(struct_concept_dict)['job_name']
+                struct_object_name = 'input_structure_' + flatten_cdict(struct_concept_dict)['job_name']  ####################
+                objects_1 = o.get_objects(
+                    space      = space,
+                    type       ='MAT_SIM_STRUCTURE.CRYSTAL',
+                    start_with = 0,
+                )
+                exists = False
+                for object_1 in objects_1:
+                    if object_1.p.get('$name') == struct_object_name:
+                        exists = True
+                        found_object_1 = object_1
+
+                if exists == True:
+                    object_.add_parents(found_object_1.identifier)
+                    object_.save()
+                else:
+                    print("==============================\n")
+                    print("Create structure object first!\n")
+                    print("==============================\n")
+            
+            return object_.p
 
 #TBD
 def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dict):
@@ -254,6 +277,11 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
 
     # if not space:
     #     space = user.upper()
+
+    if 'S3' in str(type(o)):
+        kind = 'LINK'
+    else:
+        kind = 'PHYSICAL'
 
     ob_coll = '/' + space + '/' + project + '/' + collection
     # cdict = flatten_crystal_cdict(concept_dict)
@@ -328,6 +356,7 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
             collection = ob_coll,
             object     = object_,
             files      = [path_to_h5],
+            kind       = kind,
             props      = dataset_props_dict
         )
 

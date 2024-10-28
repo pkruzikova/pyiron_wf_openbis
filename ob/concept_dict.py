@@ -299,6 +299,13 @@ def add_software(job, method_dict, struct=False):
                 "value": job.to_dict()['server']['cores'],
             }
         )
+        # extra for parent linkage
+        pyiron_job_details.append(
+            {
+                "label": "host",
+                "value": job.to_dict()['server']['host'],
+            }
+        )
  
         software = {
             "@id": "http://demo.fiz-karlsruhe.de/matwerk/E447986",
