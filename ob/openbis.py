@@ -249,7 +249,7 @@ def GenericLammpsJobObject(o, space, project, collection, concept_dict, struct_c
         return object_.p
 
 #TBD
-def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dict):
+def GenericCrystalObject(o, space, project, collection, concept_dict):
     # o = openbis_login(url, user)
 
     # if not space:
@@ -258,21 +258,18 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
     ob_coll = '/' + space + '/' + project + '/' + collection
     # cdict = flatten_crystal_cdict(concept_dict)
     cdict = flatten_cdict(concept_dict)
-    
-    objects = o.get_objects(
-        space      = space,
-        type       ='MAT_SIM_STRUCTURE.CRYSTAL',
-        start_with = 0,
-    )
+
+    ob_project_obj = o.get_project('/' + space + '/' + project)
+    objects = ob_project_obj.get_objects(type = 'MAT_SIM_STRUCTURE.CRYSTAL')
     exists = False
     for object_ in objects:
-        if object_.p.get('$name') == name_prefix + '_structure_' + cdict['job_name']:
+        if object_.p.get('$name') == cdict['structure_name']:
             exists = True
             found_object = object_
 
     if exists == True:
         print("=========================\n")
-        print(f"Structure already exists! Found structure in: {found_object.identifier}\n")
+        print(f"Structure already exists in project! Found structure in: {found_object.identifier}\n")
         print("=========================\n")
         print("Found structure properties:\n")
         return found_object.p
@@ -282,19 +279,26 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
         description =   'Crystal structure generated using pyiron.<p><span style="color:hsl(240,75%,60%);">' + \
                         '<strong>Scroll down below other properties to view conceptual dictionary with ontological ids of selected properties and values.</strong></span>' + \
                         '<br>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a></p>'
+
+        #description =   '<figure class="image image_resized image-style-align-left" style="width:9%;">' + \
+        #                '<img src="/openbis/openbis/file-service/eln-lims/30/77/c8/3077c8f8-0e55-41e5-9021-7ed43863e5a4/cc44149e-b2d4-4850-9f88-7a4cd54c1a66.png">' + \
+        #                '</figure><p><br>Lammps simulation using pyiron for energy minimization/structural optimization.<br>&nbsp;</p><p><span style="color:hsl(240,75%,60%);">' + \
+        #                '<strong>Scroll down below other properties to view conceptual dictionary with ontological ids of selected properties and values.</strong></span>' + \
+        #                '</p><p>The conceptual dictionary is in JSON-LD format. Learn more about it <a href="https://www.w3.org/ns/json-ld/">here</a><br>&nbsp;</p>'
+
         
         species = {}
         for i in concept_dict['atoms']:
             if i['label'] != 'total_number_atoms':
                 species[i['label']] = i['value']
 
-        json_file = cdict['project_name'] + '/' + cdict['job_name'] + "_" + name_prefix + '_structure_concept_dict.json'
+        json_file = cdict['path'] + cdict['structure_name'] + '_concept_dict.json'
         with open(json_file, 'r') as file:
             json_string = file.read()
         json_string = format_json_string(json_string)
 
         props_dict = {
-            '$name': name_prefix + '_structure_' + cdict['job_name'],
+            '$name': cdict['structure_name'],
             'description': description,
             'workflow_manager': cdict['workflow_manager'],
             'chem_species_by_n_atoms': str(species),
@@ -306,6 +310,23 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
             'conceptual_dictionary': json_string,
         }
 
+        if 'crystal_orientation' in cdict.keys(): props_dict['crystal_orientation'] = cdict['crystal_orientation']
+        if 'lattice_parameter_a' in cdict.keys(): props_dict['lattice_param_a_in_a'] = cdict['lattice_parameter_a']
+        if 'lattice_parameter_b' in cdict.keys(): props_dict['lattice_param_b_in_a'] = cdict['lattice_parameter_b']
+        if 'lattice_parameter_c' in cdict.keys(): props_dict['lattice_param_c_in_a'] = cdict['lattice_parameter_c']
+        if 'lattice_parameter_c_over_a' in cdict.keys(): props_dict['lattice_c_over_a'] = cdict['lattice_parameter_c_over_a']
+        if 'lattice_angle_alpha' in cdict.keys(): props_dict['lattice_angalpha_in_deg'] = cdict['lattice_angle_alpha']
+        if 'lattice_angle_beta' in cdict.keys(): props_dict['lattice_angbeta_in_deg'] = cdict['lattice_angle_beta']
+        if 'lattice_angle_gamma' in cdict.keys(): props_dict['lattice_anggamma_in_deg'] = cdict['lattice_angle_gamma']
+        if 'lattice_volume' in cdict.keys(): props_dict['lattice_volume_in_a3'] = cdict['lattice_volume']
+
+        if 'space_group' in cdict.keys():
+            spg_map = get_space_group_mapping(cdict['space_group'])
+            props_dict['space_group'] = spg_map
+        if 'bravais_lattice' in cdict.keys():
+            bvl_map = get_bravais_lattice_mapping(cdict['bravais_lattice'])
+            props_dict['bravais_lattice'] = bvl_map
+
         object_ = o.new_object(
             type       = 'MAT_SIM_STRUCTURE.CRYSTAL',
             space      = space,
@@ -314,24 +335,63 @@ def GenericCrystalObject(o, space, project, collection, name_prefix, concept_dic
         )
         object_.save()
 
-        dataset_props_dict = {
-            '$name': name_prefix + '_structure_' + cdict['job_name'] + '.h5',
-            'multi_mat_scale': 'Electronic/Atomistic',
-            'sw_compatibility': 'ASE',
-            'file_format': 'HDF5',
-        }
-        
-        path_to_h5 = cdict['project_name'] + '/' + str(cdict['job_name']) + '_input_structure.h5'
-        
-        ds_hdf = o.new_dataset(
-            type       = 'MAT_SIM_STRUCTURE',
-            collection = ob_coll,
-            object     = object_,
-            files      = [path_to_h5],
-            props      = dataset_props_dict
-        )
-
-        ds_hdf.save()
-
+        struct_file_name = cdict['structure_name'] + '.h5'
+        struct_file_path = cdict['path'] + cdict['structure_name'] + '.h5'
+        upload_atomistic_structure_file(o, object_, struct_file_name, ob_coll, struct_file_path)
+        cdict_file_name = cdict['structure_name'] + '_concept_dict.json'
+        cdict_file_path = cdict['path'] + cdict['structure_name'] + '_concept_dict.json'
+        upload_concept_dict(o, object_, cdict_file_name, ob_coll, cdict_file_path)
     
     return object_.p
+
+def get_space_group_mapping(spg):
+    if spg == 'Im-3m':
+        return ('SPACE_GROUP.IM-3M').lower()
+    elif spg == 'Fm-3m':
+        return ('SPACE_GROUP.FM-3M').lower()
+    elif spg == 'P6_3/mmc':
+        return ('SPACE_GROUP.P63_MMC').lower()
+    else:
+        raise ValueError(f'Invalid Bravais lattice, maybe a formatting error?')
+
+def get_bravais_lattice_mapping(bvl):
+    if bvl == 'bcc':
+        return ('BODY_CENTER_CUBIC').lower()
+    elif bvl == 'fcc':
+        return ('FACE_CENTER_CUBIC').lower()
+    elif bvl == 'hcp':
+        return ('HEX_CLOSE_PACK').lower()
+    else:
+        raise ValueError(f'Invalid Bravais lattice, maybe a formatting error?')
+
+def upload_atomistic_structure_file(o, structure_object, structure_name, collection, file_path):
+    dataset_props_dict = {
+        '$name': structure_name,
+        'multi_mat_scale': 'Electronic/Atomistic',
+        'sw_compatibility': 'ASE',
+        'file_format': 'HDF5',
+    }
+    
+    ds_hdf = o.new_dataset(
+        type       = 'MAT_SIM_STRUCTURE',
+        collection = collection,
+        object     = structure_object,
+        files      = [file_path],
+        kind       = 'PHYSICAL',
+        props      = dataset_props_dict
+    )
+    ds_hdf.save()
+    return
+
+def upload_concept_dict(o, ob_object, cdict_name, collection, file_path):
+    ds_json = o.new_dataset(
+        type       = 'ATTACHMENT',
+        collection = collection,
+        object     = ob_object,
+        files      = [file_path],
+        kind       = 'PHYSICAL',
+        props      = {'$name': cdict_name}
+        )
+    ds_json.save()
+    return
+
