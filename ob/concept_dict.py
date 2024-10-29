@@ -41,7 +41,7 @@ def process_murnaghan_job(job):
     add_murnaghan_contexts(method_dict)
     identify_murnaghan_method(job, method_dict)
     extract_murnaghan_calculated_quantities(job, method_dict)
-    add_simulation_software(job, method_dict)
+    add_murnaghan_software(job, method_dict)
     get_simulation_folder(job, method_dict)
     file_name = job.path + '_concept_dict.json'
     with open(file_name, 'w') as f:
@@ -63,7 +63,7 @@ def add_lammps_contexts(method_dict):
     method_dict['@context']['molecular_dynamics'] = 'http://purls.helmholtz-metadaten.de/asmo/MolecularDynamics'
     method_dict['@context']['molecular_statics'] = 'http://purls.helmholtz-metadaten.de/asmo/MolecularStatics'
     method_dict['@context']['ensemble'] = 'http://purls.helmholtz-metadaten.de/asmo/hasStatisticalEnsemble'
-    sample_dict['@context']['job_details'] = 'id-from-pmdco-pending'
+    method_dict['@context']['job_details'] = 'id-from-pmdco-pending'
 
 def get_structures(job, method_dict):
     initial_pyiron_structure = job.structure
@@ -301,29 +301,64 @@ def extract_lammps_calculated_quantities(job, method_dict):
     )
     method_dict['outputs'] =  outputs
 
-def add_simulation_software(job, method_dict, struct=False):
+def add_simulation_software(job, method_dict):
     method_dict["workflow_manager"] = {}
     method_dict["workflow_manager"]["@id"] = "http://demo.fiz-karlsruhe.de/matwerk/E457491"
     import subprocess
     import platform
     try:
         if "Windows" in platform.system():
-            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', job.project.name + '\\' + job.name + '_environment.yml'])
+            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', job.path + '_environment.yml'])
         else:
-            output1 = subprocess.check_output(['grep', 'pyiron_atomistics', job.project.name + '/' + job.name + '_environment.yml'])
+            output1 = subprocess.check_output(['grep', 'pyiron_atomistics', job.path + '_environment.yml'])
         s1 = str((output1.decode('utf-8')))
     except:
         s1 = ''
     try:
         if "Windows" in platform.system():
-            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', job.project.name + '\\' + job.name + '_environment.yml'])
+            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', job.path + '_environment.yml'])
         else:
-            output2 = subprocess.check_output(['grep', 'pyiron_workflow', job.project.name + '/' + job.name + '_environment.yml'])
+            output2 = subprocess.check_output(['grep', 'pyiron_workflow', job.path + '_environment.yml'])
         s2 = str((output2.decode('utf-8')))
     except:
         s2 = ''
-    # hdf_ver = job.to_dict()['HDF_VERSION']
-    st = 'p' + s1.split('=')[0].split('p')[1] + "=" + s1.split('=')[1] + ', ' + 'p' + s2.split('=')[0].split('p')[1] + "=" + s2.split('=')[1] #+ ', pyiron_HDF_version=' + hdf_ver
+    try:
+        if "Windows" in platform.system():
+            output3 = subprocess.check_output(['findstr', 'pyironflow', job.path + '_environment.yml'])
+        else:
+            output3 = subprocess.check_output(['grep', 'pyironflow', job.path + '_environment.yml'])
+        s3 = str((output3.decode('utf-8')))
+    except:
+        s3 = ''
+    try:
+        if "Windows" in platform.system():
+            output4 = subprocess.check_output(['findstr', 'executorlib', job.path + '_environment.yml'])
+        else:
+            output4 = subprocess.check_output(['grep', 'executorlib', job.path + '_environment.yml'])
+        s4 = str((output3.decode('utf-8')))
+    except:
+        s4 = ''
+
+    #hdf_ver = job.to_dict()['HDF_VERSION']
+    try:
+        st1 = 'p' + s1.split('=')[0].split('p')[1] + "=" + s1.split('=')[1] + ', '
+    except:
+        st1 = ''
+    try:
+        st2 = 'p' + s2.split('=')[0].split('p')[1] + "=" + s2.split('=')[1] + ', '
+    except:
+        st2 = ''
+    try:
+        st3 = 'p' + s3.split('=')[0].split('p')[1] + "=" + s3.split('=')[1] + ', '
+    except:
+        st3 = ''
+    try:
+        st4 = 'e' + s3.split('=')[0].split('e')[1] + "=" + s4.split('=')[1] + ', '
+    except:
+        st4 = ''
+    st = st1 + st2 + st3 + st4
+    
+    #+ ', pyiron_HDF_version=' + hdf_ver
     method_dict["workflow_manager"]["label"] = st
 
     pyiron_job_details = []
@@ -339,54 +374,59 @@ def add_simulation_software(job, method_dict, struct=False):
             "value": job.project.name,
         }
     )
-    if not struct:
-        pyiron_job_details.append(
-            {
-                "label": "job_type",
-                "value": job.database_entry.hamilton,
-            }
-        )
-        pyiron_job_details.append(
-            {
-                "label": "job_status",
-                "value": str(job.status),
-            }
-        )
-        pyiron_job_details.append(
-            {
-                "label": "job_starttime",
-                "value": str(job.database_entry.timestart.strftime("%Y-%m-%d %H:%M:%S")),
-            }
-        )
-        pyiron_job_details.append(
-            {
-                "label": "job_stoptime",
-                "value": str(job.database_entry.timestop.strftime("%Y-%m-%d %H:%M:%S")),
-            }
-        )
-        pyiron_job_details.append(
-            {
-                "label": "sim_coretime_hours",
-                "value": job.database_entry.totalcputime,
-            }
-        )
-        pyiron_job_details.append(
-            {
-                "label": "number_cores",
-                "value": job.to_dict()['server']['cores'],
-            }
-        )
- 
-        software = {
-            "@id": "http://demo.fiz-karlsruhe.de/matwerk/E447986",
-            "label": "LAMMPS " + job.to_dict()['executable']['version'],
+    pyiron_job_details.append(
+        {
+            "label": "job_type",
+            "value": job.database_entry.hamilton,
         }
-        method_dict["software"] = [software]
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_status",
+            "value": str(job.status),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_starttime",
+            "value": str(job.database_entry.timestart.strftime("%Y-%m-%d %H:%M:%S")),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_stoptime",
+            "value": str(job.database_entry.timestop.strftime("%Y-%m-%d %H:%M:%S")),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "sim_coretime_hours",
+            "value": np.round(job.database_entry.totalcputime/3600, 6),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "number_cores",
+            "value": job.to_dict()['server']['cores'],
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "host",
+            "value": job.to_dict()['server']['host'],
+        }
+    )
+ 
+    software = {
+        "@id": "http://demo.fiz-karlsruhe.de/matwerk/E447986",
+        "label": "LAMMPS " + job.to_dict()['executable']['version'],
+    }
+    method_dict["software"] = [software]
 
     method_dict["job_details"] = pyiron_job_details
 
 def get_simulation_folder(job, method_dict):
-    method_dict['path'] = os.path.join(job.project.path, f'{job.name}_hdf5')
+    method_dict['path'] = job.path
 
 def add_murnaghan_contexts(method_dict):
     method_dict['@context'] = {}
@@ -400,7 +440,7 @@ def add_murnaghan_contexts(method_dict):
     method_dict['@context']['outputs'] = 'http://purls.helmholtz-metadaten.de/cmso/hasCalculatedProperty'
     #method_dict['@context']['workflow_manager'] = ''
     #method_dict['@context']['software'] = ''
-    sample_dict['@context']['job_details'] = 'id-from-pmdco-pending'
+    method_dict['@context']['job_details'] = 'id-from-pmdco-pending'
     
 def identify_murnaghan_method(job, method_dict):
 
@@ -412,8 +452,8 @@ def identify_murnaghan_method(job, method_dict):
         method_dict['equation_of_state_fit'] = "id-from-asmo-pending"
     elif job.input['fit_type'] == 'vinet':
         method_dict['equation_of_state_fit'] = "http://purls.helmholtz-metadaten.de/asmo/Vinet"
-    else job.input['fit_type'] == 'polynomial':
-        method_dict['equation_of_state_fit'] = "asmo-id-needs-modification"
+    else:
+        method_dict['equation_of_state_fit'] = "asmo-id-polynomial-needs-modification"
 
     inputs = []
     if job.input['fit_type'] == 'polynomial':
@@ -427,7 +467,7 @@ def identify_murnaghan_method(job, method_dict):
     inputs.append(
         {
             "label": "StrainAxes",
-            "value": job.input['axes'],
+            "value": ','.join(job.input['axes']),
             "@id": "id-from-asmo-pending"
         }
     )
@@ -453,27 +493,148 @@ def extract_murnaghan_calculated_quantities(job, method_dict):
     outputs = []
     outputs.append(
         {
-            "label": "StrainAxes",
-            "value": job.input['axes'],
+            "label": "EquilibriumBulkModulus",
+            "value": np.round(job.output_to_pandas()['equilibrium_bulk_modulus'][0],4),
+            "unit": "GigaPA",
             "@id": "id-from-asmo-pending"
         }
     )
     outputs.append(
         {
-            "label": "NumberOfDataPoints",
-            "value": job.input['num_points'],
+            "label": "EquilibriumTotalEnergy",
+            "value": np.round(job.output_to_pandas()['equilibrium_energy'][0],4),
+            "unit": "EV",
             "@id": "id-from-asmo-pending"
         }
     )
     outputs.append(
         {
-            "label": "VolumeRange",
-            "value": job.input['vol_range'],
+            "label": "EquilibriumVolume",
+            "value": np.round(job.output_to_pandas()['equilibrium_volume'][0],4),
+            "unit": "ANGSTROM3",
             "@id": "id-from-asmo-pending"
         }
     )
 
     method_dict["outputs"] = outputs
+
+def add_murnaghan_software(job, method_dict):
+    method_dict["workflow_manager"] = {}
+    method_dict["workflow_manager"]["@id"] = "http://demo.fiz-karlsruhe.de/matwerk/E457491"
+    import subprocess
+    import platform
+    try:
+        if "Windows" in platform.system():
+            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', job.path + '_environment.yml'])
+        else:
+            output1 = subprocess.check_output(['grep', 'pyiron_atomistics', job.path + '_environment.yml'])
+        s1 = str((output1.decode('utf-8')))
+    except:
+        s1 = ''
+    try:
+        if "Windows" in platform.system():
+            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', job.path + '_environment.yml'])
+        else:
+            output2 = subprocess.check_output(['grep', 'pyiron_workflow', job.path + '_environment.yml'])
+        s2 = str((output2.decode('utf-8')))
+    except:
+        s2 = ''
+    try:
+        if "Windows" in platform.system():
+            output3 = subprocess.check_output(['findstr', 'pyironflow', job.path + '_environment.yml'])
+        else:
+            output3 = subprocess.check_output(['grep', 'pyironflow', job.path + '_environment.yml'])
+        s3 = str((output3.decode('utf-8')))
+    except:
+        s3 = ''
+    try:
+        if "Windows" in platform.system():
+            output4 = subprocess.check_output(['findstr', 'executorlib', job.path + '_environment.yml'])
+        else:
+            output4 = subprocess.check_output(['grep', 'executorlib', job.path + '_environment.yml'])
+        s4 = str((output3.decode('utf-8')))
+    except:
+        s4 = ''
+
+    #hdf_ver = job.to_dict()['HDF_VERSION']
+    try:
+        st1 = 'p' + s1.split('=')[0].split('p')[1] + "=" + s1.split('=')[1] + ', '
+    except:
+        st1 = ''
+    try:
+        st2 = 'p' + s2.split('=')[0].split('p')[1] + "=" + s2.split('=')[1] + ', '
+    except:
+        st2 = ''
+    try:
+        st3 = 'p' + s3.split('=')[0].split('p')[1] + "=" + s3.split('=')[1] + ', '
+    except:
+        st3 = ''
+    try:
+        st4 = 'e' + s3.split('=')[0].split('e')[1] + "=" + s4.split('=')[1] + ', '
+    except:
+        st4 = ''
+    st = st1 + st2 + st3 + st4
+    
+    #+ ', pyiron_HDF_version=' + hdf_ver
+    method_dict["workflow_manager"]["label"] = st
+
+    pyiron_job_details = []
+    pyiron_job_details.append(
+        {
+            "label": "job_name",
+            "value": job.name,
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "project_name",
+            "value": job.project.name,
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_type",
+            "value": job.database_entry.hamilton,
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_status",
+            "value": str(job.status),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_starttime",
+            "value": str(job.database_entry.timestart.strftime("%Y-%m-%d %H:%M:%S")),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "job_stoptime",
+            "value": str(job.database_entry.timestop.strftime("%Y-%m-%d %H:%M:%S")),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "sim_coretime_hours",
+            "value": np.round(job.database_entry.totalcputime/3600, 6),
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "number_cores",
+            "value": job.to_dict()['server']['cores'],
+        }
+    )
+    pyiron_job_details.append(
+        {
+            "label": "host",
+            "value": job.to_dict()['server']['host'],
+        }
+    )
+
+    method_dict["job_details"] = pyiron_job_details
 
 def get_unit_cell_parameters(structure):
     if structure.get_symmetry().spacegroup['InternationalTableSymbol'] == "Im-3m":
@@ -695,17 +856,39 @@ def add_structure_software(pr, structure, structure_name, structure_path, sample
     sample_dict["workflow_manager"] = {}
     sample_dict["workflow_manager"]["@id"] = "http://demo.fiz-karlsruhe.de/matwerk/E457491"
     import subprocess
-    output1 = subprocess.check_output(['grep', 'pyiron_atomistics', pr.path + pr.name + '_environment.yml'])
-    s1 = str((output1.decode('utf-8')))
-
-    output2 = subprocess.check_output(['grep', 'pyiron_workflow', pr.path + pr.name + '_environment.yml'])
-    s2 = str((output2.decode('utf-8')))
-
-    output1 = subprocess.check_output(['grep', 'pyironflow', pr.path + pr.name + '_environment.yml'])
-    s3 = str((output1.decode('utf-8')))
-
-    output1 = subprocess.check_output(['grep', 'executorlib', pr.path + pr.name + '_environment.yml'])
-    s4 = str((output1.decode('utf-8')))
+    import platform
+    try:
+        if "Windows" in platform.system():
+            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', pr.path + '\\' + pr.name + '_environment.yml'])
+        else:
+            output1 = subprocess.check_output(['grep', 'pyiron_atomistics', pr.path + pr.name + '_environment.yml'])
+        s1 = str((output1.decode('utf-8')))
+    except:
+        s1 = ''
+    try:
+        if "Windows" in platform.system():
+            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', pr.path + '\\' + pr.name + '_environment.yml'])
+        else:
+            output2 = subprocess.check_output(['grep', 'pyiron_workflow', pr.path + pr.name + '_environment.yml'])
+        s2 = str((output2.decode('utf-8')))
+    except:
+        s2 = ''
+    try:
+        if "Windows" in platform.system():
+            output3 = subprocess.check_output(['findstr', 'pyironflow', pr.path + '\\' + pr.name + '_environment.yml'])
+        else:
+            output3 = subprocess.check_output(['grep', 'pyironflow', pr.path + pr.name + '_environment.yml'])
+        s3 = str((output3.decode('utf-8')))
+    except:
+        s3 = ''
+    try:
+        if "Windows" in platform.system():
+            output4 = subprocess.check_output(['findstr', 'executorlib', pr.path + '\\' + pr.name + '_environment.yml'])
+        else:
+            output4 = subprocess.check_output(['grep', 'executorlib', pr.path + pr.name + '_environment.yml'])
+        s4 = str((output3.decode('utf-8')))
+    except:
+        s4 = ''
 
     #hdf_ver = job.to_dict()['HDF_VERSION']
     try:
