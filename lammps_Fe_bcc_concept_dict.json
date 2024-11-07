@@ -115,7 +115,7 @@
   "job_details": [
     {
       "label": "job_name",
-      "value": "lammps_wf_Fe_bcc"
+      "value": "lammps_Fe_bcc"
     },
     {
       "label": "project_name",
