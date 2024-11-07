@@ -1,0 +1,109 @@
+{
+  "@context": {
+    "path": "http://purls.helmholtz-metadaten.de/cmso/hasPath",
+    "unit_cell": "http://purls.helmholtz-metadaten.de/cmso/UnitCell",
+    "atoms": "http://purls.helmholtz-metadaten.de/cmso/Atom",
+    "molecules": "http://purls.helmholtz-metadaten.de/cmso/Molecule",
+    "bravais_lattice": "http://purls.helmholtz-metadaten.de/cmso/hasBravaisLattice",
+    "chemical_species": "http://purls.helmholtz-metadaten.de/cmso/ChemicalSpecies",
+    "simulation_cell": "http://www.w3.org/2000/01/rdf-schema#label",
+    "label": "http://www.w3.org/2000/01/rdf-schema#label",
+    "unit": "http://purls.helmholtz-metadaten.de/cmso/hasUnit",
+    "value": "http://purls.helmholtz-metadaten.de/asmo/hasValue",
+    "vector": "http://purls.helmholtz-metadaten.de/cmso/Vector",
+    "job_details": "id-from-pmdco-pending"
+  },
+  "unit_cell": [
+    {
+      "value": 2.845,
+      "unit": "ANGSTROM",
+      "label": "lattice_parameter_a",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasLatticeParameter"
+    },
+    {
+      "value": 90.0,
+      "unit": "DEGREE",
+      "label": "lattice_angle_alpha",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasAngle"
+    },
+    {
+      "value": 90.0,
+      "unit": "DEGREE",
+      "label": "lattice_angle_beta",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasAngle"
+    },
+    {
+      "value": 90.0,
+      "unit": "DEGREE",
+      "label": "lattice_angle_gamma",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasAngle"
+    },
+    {
+      "value": 23.0275,
+      "unit": "ANGSTROM3",
+      "label": "lattice_volume",
+      "@id": "id-from-cmso-pending"
+    },
+    {
+      "value": "Im-3m",
+      "label": "space_group",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasSpaceGroup"
+    },
+    {
+      "value": "bcc",
+      "label": "bravais_lattice",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasBravaisLattice"
+    }
+  ],
+  "atoms": [
+    {
+      "value": 2,
+      "label": "Fe"
+    },
+    {
+      "value": 2,
+      "label": "total_number_atoms"
+    }
+  ],
+  "simulation_cell": [
+    {
+      "value": "[2.845, 2.845, 2.845]",
+      "unit": "ANGSTROM",
+      "label": "simulation_cell_lengths",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasLength"
+    },
+    {
+      "value": "[array([2.845, 0.   , 0.   ]), array([0.   , 2.845, 0.   ]), array([0.   , 0.   , 2.845])]",
+      "unit": "ANGSTROM",
+      "label": "simulation_cell_vectors",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasVector"
+    },
+    {
+      "value": "[90.0, 90.0, 90.0]",
+      "unit": "DEGREES",
+      "label": "simulation_cell_angles",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasAngle"
+    },
+    {
+      "value": 23.0275,
+      "unit": "ANGSTROM3",
+      "label": "simulation_cell_volume",
+      "@id": "http://purls.helmholtz-metadaten.de/cmso/hasVolume"
+    }
+  ],
+  "workflow_manager": {
+    "@id": "http://demo.fiz-karlsruhe.de/matwerk/E457491",
+    "label": "pyiron_atomistics=0.6.14, pyiron_workflow=0.11.0, pyironflow=0.0.3, "
+  },
+  "job_details": [
+    {
+      "label": "structure_name",
+      "value": "unitcell1_Fe_bcc_input_structure"
+    },
+    {
+      "label": "project_name",
+      "value": "lammps_wf_Fe"
+    }
+  ],
+  "path": "/home/tlakshmi/pyiron_workflow_20240611/pyiron_wf_openbis/lammps_wf_Fe/"
+}

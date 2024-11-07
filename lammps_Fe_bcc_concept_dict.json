@@ -1,0 +1,154 @@
+{
+  "@context": {
+    "sample": "http://purls.helmholtz-metadaten.de/cmso/AtomicScaleSample",
+    "path": "http://purls.helmholtz-metadaten.de/cmso/hasPath",
+    "dof": "http://purls.helmholtz-metadaten.de/asmo/hasRelaxationDOF",
+    "inputs": "http://purls.helmholtz-metadaten.de/asmo/hasInputParameter",
+    "label": "http://www.w3.org/2000/01/rdf-schema#label",
+    "unit": "http://purls.helmholtz-metadaten.de/asmo/hasUnit",
+    "value": "http://purls.helmholtz-metadaten.de/asmo/hasValue",
+    "outputs": "http://purls.helmholtz-metadaten.de/cmso/hasCalculatedProperty",
+    "molecular_dynamics": "http://purls.helmholtz-metadaten.de/asmo/MolecularDynamics",
+    "molecular_statics": "http://purls.helmholtz-metadaten.de/asmo/MolecularStatics",
+    "ensemble": "http://purls.helmholtz-metadaten.de/asmo/hasStatisticalEnsemble",
+    "job_details": "id-from-pmdco-pending",
+    "potential": "http://purls.helmholtz-metadaten.de/asmo/EmbeddedAtomModel"
+  },
+  "molecular_statics": {
+    "minimization_algorithm": "cg",
+    "periodicity_in_x": true,
+    "periodicity_in_y": true,
+    "periodicity_in_z": true,
+    "inputs": [
+      {
+        "value": null,
+        "unit": "K",
+        "label": "temperature",
+        "@id": "id-from-asmo-pending"
+      },
+      {
+        "value": null,
+        "unit": "GigaPA",
+        "label": "pressure",
+        "@id": "id-from-asmo-pending"
+      },
+      {
+        "value": 0.0,
+        "unit": "EV",
+        "label": "ionic energy tolerance",
+        "@id": "id-from-asmo-pending"
+      },
+      {
+        "value": 1e-08,
+        "unit": "EV-PER-ANGSTROM",
+        "label": "force tolerance",
+        "@id": "id-from-asmo-pending"
+      },
+      {
+        "value": 100000,
+        "label": "maximum iterations",
+        "@id": "id-from-asmo-pending"
+      }
+    ],
+    "ensemble": null,
+    "potential": {
+      "label": "2022--Sun-Y--Fe--LAMMPS--ipr1",
+      "@id": "https://doi.org/10.1073%2Fpnas.2113059119"
+    }
+  },
+  "dof": [
+    "http://purls.helmholtz-metadaten.de/asmo/AtomicPositionRelaxation"
+  ],
+  "outputs": [
+    {
+      "label": "AverageTotalEnergy",
+      "value": -8.0433,
+      "unit": "EV",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "FinalTotalEnergy",
+      "value": -8.0433,
+      "unit": "EV",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "FinalPotentialEnergy",
+      "value": -8.0433,
+      "unit": "EV",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "AverageTotalVolume",
+      "value": 23.0275,
+      "unit": "ANGSTROM3",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "FinalTotalVolume",
+      "value": 23.0275,
+      "unit": "ANGSTROM3",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "FinalMaximumForce",
+      "value": 6e-16,
+      "unit": "EV-PER-ANGSTROM",
+      "@id": "id-from-asmo-pending"
+    },
+    {
+      "label": "NumberIonicSteps",
+      "value": 1,
+      "@id": "id-from-asmo-pending"
+    }
+  ],
+  "workflow_manager": {
+    "@id": "http://demo.fiz-karlsruhe.de/matwerk/E457491",
+    "label": "pyiron_atomistics=0.6.14, pyiron_workflow=0.11.0, pyironflow=0.0.3, "
+  },
+  "software": [
+    {
+      "@id": "http://demo.fiz-karlsruhe.de/matwerk/E447986",
+      "label": "LAMMPS 2020.03.03"
+    }
+  ],
+  "job_details": [
+    {
+      "label": "job_name",
+      "value": "lammps_wf_Fe_bcc"
+    },
+    {
+      "label": "project_name",
+      "value": "lammps_wf_Fe"
+    },
+    {
+      "label": "job_type",
+      "value": "Lammps"
+    },
+    {
+      "label": "job_status",
+      "value": "finished"
+    },
+    {
+      "label": "job_starttime",
+      "value": "2024-11-06 11:34:11"
+    },
+    {
+      "label": "job_stoptime",
+      "value": "2024-11-06 11:34:11"
+    },
+    {
+      "label": "sim_coretime_hours",
+      "value": 0.0
+    },
+    {
+      "label": "number_cores",
+      "value": 1
+    },
+    {
+      "label": "host",
+      "value": "VDI0107.zit.bam.de"
+    }
+  ],
+  "path": "/home/tlakshmi/pyiron_workflow_20240611/pyiron_wf_openbis/lammps_wf_Fe/lammps_wf_Fe_bcc"
+}
