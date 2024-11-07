@@ -98,7 +98,7 @@
   "job_details": [
     {
       "label": "structure_name",
-      "value": "unitcell1_Fe_bcc_input_structure"
+      "value": "lammps_Fe_bcc_input_structure"
     },
     {
       "label": "project_name",
