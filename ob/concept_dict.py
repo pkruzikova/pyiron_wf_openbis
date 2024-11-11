@@ -308,7 +308,7 @@ def add_simulation_software(job, method_dict):
     import platform
     try:
         if "Windows" in platform.system():
-            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', job.path + '_environment.yml'])
+            output1 = subprocess.check_output(['findstr', 'pyiron_atomistics', job.path.replace('/', '\\') + '_environment.yml'])
         else:
             output1 = subprocess.check_output(['grep', 'pyiron_atomistics', job.path + '_environment.yml'])
         s1 = str((output1.decode('utf-8')))
@@ -316,7 +316,7 @@ def add_simulation_software(job, method_dict):
         s1 = ''
     try:
         if "Windows" in platform.system():
-            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', job.path + '_environment.yml'])
+            output2 = subprocess.check_output(['findstr', 'pyiron_workflow', job.path.replace('/', '\\') + '_environment.yml'])
         else:
             output2 = subprocess.check_output(['grep', 'pyiron_workflow', job.path + '_environment.yml'])
         s2 = str((output2.decode('utf-8')))
@@ -324,7 +324,7 @@ def add_simulation_software(job, method_dict):
         s2 = ''
     try:
         if "Windows" in platform.system():
-            output3 = subprocess.check_output(['findstr', 'pyironflow', job.path + '_environment.yml'])
+            output3 = subprocess.check_output(['findstr', 'pyironflow', job.path.replace('/', '\\') + '_environment.yml'])
         else:
             output3 = subprocess.check_output(['grep', 'pyironflow', job.path + '_environment.yml'])
         s3 = str((output3.decode('utf-8')))
@@ -332,7 +332,7 @@ def add_simulation_software(job, method_dict):
         s3 = ''
     try:
         if "Windows" in platform.system():
-            output4 = subprocess.check_output(['findstr', 'executorlib', job.path + '_environment.yml'])
+            output4 = subprocess.check_output(['findstr', 'executorlib', job.path.replace('/', '\\') + '_environment.yml'])
         else:
             output4 = subprocess.check_output(['grep', 'executorlib', job.path + '_environment.yml'])
         s4 = str((output4.decode('utf-8')))
@@ -353,7 +353,7 @@ def add_simulation_software(job, method_dict):
     except:
         st3 = ''
     try:
-        st4 = 'e' + s3.split('=')[0].split('e')[1] + "=" + s4.split('=')[1] + ', '
+        st4 = s4.split('=')[0].split('- ')[1] + "=" + s4.split('=')[1]
     except:
         st4 = ''
     st = st1 + st2 + st3 + st4

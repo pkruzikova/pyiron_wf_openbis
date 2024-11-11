@@ -61,11 +61,11 @@ def classic_murn_equil_structure(murn_job):
         
     return struct_cdict
 
-def upload_classic_pyiron(pr, job, o, space, project, collection, structure=None):
+def upload_classic_pyiron(pr, job, o, space, project, collection):
 
-    if not structure:
-        structure = job.structure
+    structure = job.structure
     if structure:
+        
         from ob.openbis import GenericLammpsJobObject, GenericCrystalObject, MurnaghanJobObject
 
         # Project env file
